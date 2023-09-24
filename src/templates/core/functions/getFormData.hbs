@@ -2,25 +2,57 @@ export const getFormData = (options: ApiRequestOptions): FormData | undefined =>
 	if (options.formData) {
 		const formData = new FormData();
 
-		const process = (key: string, value: any) => {
-			if (isString(value) || isBlob(value)) {
-				formData.append(key, value);
-			} else {
-				formData.append(key, JSON.stringify(value));
+		const process = (value: any, parent?: string) => {
+			const processedKey = parent || '';
+
+			if (isNull(value) || isUndefined(value)) {
+				formData.append(processedKey, '');
+				return;
 			}
+
+			if (isFile(value)) {
+				formData.append(processedKey, value);
+				return;
+			}
+
+			if (isBlob(value)) {
+				formData.append(processedKey, value);
+				return;
+			}
+
+			if (isArray(value)) {
+				value.forEach((item, index) => {
+					let computedKey = processedKey;
+					computedKey += `[${index}]`
+					process(item, computedKey);
+				});
+				return;
+			}
+
+			if (isObject(value)) {
+				Object.entries(value).forEach(([key, data]) => {
+					let computedKey = key;
+					if (parent) {
+						computedKey = `${parent}[${key}]`;
+					}
+					process(data, computedKey);
+				});
+				return;
+			}
+
+			if (isBoolean(value)) {
+				formData.append(processedKey, value ? 'true' : 'false');
+
+				return;
+			}
+
+			formData.append(processedKey, value);
 		};
 
-		Object.entries(options.formData)
-			.filter(([_, value]) => isDefined(value))
-			.forEach(([key, value]) => {
-				if (Array.isArray(value)) {
-					value.forEach(v => process(key, v));
-				} else {
-					process(key, value);
-				}
-			});
+		process(options.formData);
 
 		return formData;
 	}
+
 	return undefined;
 };
