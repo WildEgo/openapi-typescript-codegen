@@ -3,7 +3,7 @@ export const sendRequest = async <T>(
 	options: ApiRequestOptions,
 	url: string,
 	body: any,
-	formData: FormData | undefined,
+	formData: Record<string, string> | undefined,
 	headers: Record<string, string>,
 	onCancel: OnCancel,
 	axiosClient: AxiosInstance
